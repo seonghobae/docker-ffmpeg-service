@@ -17,6 +17,12 @@ exports.types = {
             '-codec:a libmp3lame',
         ],
     },
+    flac: {
+        extension: 'flac',
+        outputOptions: [
+            '-codec:a flac',
+        ],
+    },
     mp4: {
         extension: 'mp4',
         outputOptions: [
