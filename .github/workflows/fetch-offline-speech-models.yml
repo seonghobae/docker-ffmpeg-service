@@ -1,0 +1,48 @@
+name: Fetch offline speech models
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/fetch-offline-speech-models.yml
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-models:
+    if: github.event.pull_request.head.ref == 'chatgpt/fetch-whisper-model-20260805'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download Whisper.cpp model and offline speaker packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p offline-speech-models/wheels
+          curl --location --fail --silent --show-error --retry 5 --retry-all-errors \
+            --output offline-speech-models/ggml-large-v3-turbo-q5_0.bin \
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin?download=true'
+          python -m pip install --upgrade pip wheel setuptools
+          python -m pip wheel --no-deps --wheel-dir offline-speech-models/wheels \
+            'Resemblyzer==0.1.4' 'webrtcvad==2.0.10'
+          sha256sum offline-speech-models/ggml-large-v3-turbo-q5_0.bin \
+            offline-speech-models/wheels/* > offline-speech-models/SHA256SUMS.txt
+          du -sh offline-speech-models
+          cat offline-speech-models/SHA256SUMS.txt
+
+      - name: Upload offline model bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-speech-models
+          path: offline-speech-models
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
